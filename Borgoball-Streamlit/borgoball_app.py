@@ -361,17 +361,25 @@ def plot_trajectory_3d(x_points, y_points, z_points):
     )
 
     # Update layout
-    fig.update_layout(
-        title='3D Borgoball Trajectory with Bounces',
-        scene=dict(
-            xaxis_title='Distance (feet)',
-            yaxis_title='Field Position (feet)',
-            zaxis_title='Height (feet)',
-            zaxis=dict(range=[0, 85]),
-            camera=dict(
-eye=dict(x=-10, y=0, z=1),
-up=dict(x=0, y=0, z=1)
+ fig.update_layout(
+    title='3D Borgoball Trajectory with Bounces',
+    scene=dict(
+        xaxis_title='Distance (feet)',
+        yaxis_title='Field Position (feet)',
+        zaxis_title='Height (feet)',
+        zaxis=dict(range=[0, 85]),
+        camera=dict(
+            eye=dict(x=-10, y=0, z=1),
+            up=dict(x=0, y=0, z=1)
+        ),  # ← This comma was missing!
+        aspectmode='manual',
+        aspectratio=dict(x=1, y=1, z=0.4)
+    ),
+    width=800,
+    height=600,
+    margin=dict(l=0, r=0, b=0, t=30)
 )
+
 
             aspectmode='manual',
             aspectratio=dict(x=1, y=1, z=0.4)
