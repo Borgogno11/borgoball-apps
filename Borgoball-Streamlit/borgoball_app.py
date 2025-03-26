@@ -161,156 +161,110 @@ def calculate_trajectory_points_3d(exit_velocity, launch_angle, direction_angle,
 
     return np.array(all_x), np.array(all_y), np.array(all_z), first_ground_distance
 
+# Replace with this updated function from the canvas
 def plot_trajectory_3d(x_points, y_points, z_points):
-    """Create an interactive 3D plot of the ball's trajectory with baseball field and animation"""
+    import plotly.graph_objects as go
+    import numpy as np
+
     fig = go.Figure()
 
-    # Add baseball field elements
-    field = create_baseball_field()
+    # --- AI Defender Setup ---
+    defenders = [
+        {"name": "Left Fielder", "x": 30.0, "z": 20.0, "color": "blue"},
+        {"name": "Center Fielder", "x": 60.0, "z": 45.0, "color": "green"},
+        {"name": "Right Fielder", "x": 90.0, "z": 70.0, "color": "purple"},
+    ]
 
-    # Add ground plane first
-    fig.add_trace(go.Surface(
-        x=np.linspace(-10, 200, 2),
-        y=np.linspace(-10, 200, 2),
-        z=np.zeros((2, 2)),
-        colorscale=[[0, 'green'], [1, 'green']],
-        showscale=False,
-        opacity=0.3,
-        name='Field',
-        showlegend=False
-    ))
+    def move_toward(ball_x, ball_z, defender_x, defender_z, speed=2.5):
+        dx = ball_x - defender_x
+        dz = ball_z - defender_z
+        distance = np.sqrt(dx**2 + dz**2)
 
-    # Add outfield fence
-    fig.add_trace(go.Scatter3d(
-        x=field['fence'][0],
-        y=field['fence'][1],
-        z=field['fence'][2],
-        mode='lines',
-        name='Outfield Fence',
-        line=dict(color='blue', width=3),
-        showlegend=False
-    ))
+        if distance < 1.0:
+            return defender_x, defender_z, True
 
-    # Add bases as markers
-    bases_x = [0, 45, 45, 0]  # Home, 1st, 2nd, 3rd
-    bases_y = [0, 0, 45, 45]
-    bases_z = [0.1, 0.1, 0.1, 0.1]  # Slightly above ground
+        if distance > 0:
+            step_x = (dx / distance) * speed
+            step_z = (dz / distance) * speed
+            return defender_x + step_x, defender_z + step_z, False
+        return defender_x, defender_z, False
 
-    # Create frames for animation
     frames = []
     for i in range(len(x_points)):
+        ball_x = x_points[i]
+        ball_z = z_points[i]
+        ball_y = y_points[i]
+
+        frame_defenders = []
+        caught_any = False
+
+        for d in defenders:
+            new_x, new_z, caught = move_toward(ball_x, ball_z, d["x"], d["z"])
+            d["x"], d["z"] = new_x, new_z
+
+            frame_defenders.append(go.Scatter3d(
+                x=[d["x"]],
+                y=[d["z"]],
+                z=[0.1],
+                mode='markers+text',
+                marker=dict(size=8, color=d["color"]),
+                text=[f'{d["name"]}'],
+                textposition='top center',
+                showlegend=False
+            ))
+
+            if caught:
+                caught_any = True
+                d["caught"] = True
+
         frame = go.Frame(
             data=[
-                # Keep ground plane in each frame
-                go.Surface(
-                    x=np.linspace(-10, 200, 2),
-                    y=np.linspace(-10, 200, 2),
-                    z=np.zeros((2, 2)),
-                    colorscale=[[0, 'green'], [1, 'green']],
-                    showscale=False,
-                    opacity=0.3,
-                    name='Field',
-                    showlegend=False
-                ),
-                # Keep infield in each frame
-                go.Scatter3d(
-                    x=field['diamond'][0],
-                    y=field['diamond'][1],
-                    z=field['diamond'][2],
-                    mode='lines',
-                    name='Infield',
-                    line=dict(color='brown', width=3),
-                    showlegend=False
-                ),
-                # Keep bases in each frame
-                go.Scatter3d(
-                    x=bases_x,
-                    y=bases_y,
-                    z=bases_z,
-                    mode='markers',
-                    name='Bases',
-                    marker=dict(size=8, color='white', symbol='square'),
-                    showlegend=False
-                ),
-                # Keep outfield fence in each frame
-                go.Scatter3d(
-                    x=field['fence'][0],
-                    y=field['fence'][1],
-                    z=field['fence'][2],
-                    mode='lines',
-                    name='Fence',
-                    line=dict(color='blue', width=3),
-                    showlegend=False
-                ),
-                # Trailing path
                 go.Scatter3d(
                     x=x_points[:i+1],
                     y=z_points[:i+1],
                     z=y_points[:i+1],
                     mode='lines',
-                    name='Ball Path',
-                    line=dict(color='rgba(255, 0, 0, 0.7)', width=3),
+                    line=dict(color='red', width=3),
                     showlegend=False
                 ),
-                # Current ball position
                 go.Scatter3d(
                     x=[x_points[i]],
                     y=[z_points[i]],
                     z=[y_points[i]],
                     mode='markers',
-                    name='Ball',
-                    marker=dict(
-                        size=12,
-                        color='white',
-                        symbol='circle',
-                        line=dict(color='red', width=2)
-                    ),
+                    marker=dict(size=10, color='white', line=dict(color='red', width=2)),
                     showlegend=False
-                )
+                ),
+                *frame_defenders
             ],
             name=f"frame{i}"
         )
         frames.append(frame)
 
-    # Add initial static display
-    fig.add_trace(go.Scatter3d(
-        x=field['diamond'][0],
-        y=field['diamond'][1],
-        z=field['diamond'][2],
-        mode='lines',
-        name='Infield',
-        line=dict(color='brown', width=3),
-        showlegend=False
-    ))
-
-    fig.add_trace(go.Scatter3d(
-        x=bases_x,
-        y=bases_y,
-        z=bases_z,
-        mode='markers',
-        name='Bases',
-        marker=dict(size=8, color='white', symbol='square'),
-        showlegend=False
-    ))
-
-    # Add initial ball position
     fig.add_trace(go.Scatter3d(
         x=[x_points[0]],
         y=[z_points[0]],
         z=[y_points[0]],
         mode='markers',
-        name='Ball',
-        marker=dict(
-            size=12,
-            color='white',
-            symbol='circle',
-            line=dict(color='red', width=2)
-        ),
+        marker=dict(size=10, color='white', line=dict(color='red', width=2)),
         showlegend=False
     ))
 
-    # Update animation settings for smoother bouncing visualization
     fig.update_layout(
+        scene=dict(
+            xaxis_title='Distance (feet)',
+            yaxis_title='Field Position (feet)',
+            zaxis_title='Height (feet)',
+            camera=dict(
+                eye=dict(x=-1.5, y=-1.5, z=0.5),
+                up=dict(x=0, y=0, z=1)
+            ),
+            aspectmode='manual',
+            aspectratio=dict(x=1, y=1, z=0.4)
+        ),
+        width=800,
+        height=600,
+        margin=dict(l=0, r=0, b=0, t=30),
         updatemenus=[{
             'type': 'buttons',
             'showactive': False,
@@ -319,7 +273,7 @@ def plot_trajectory_3d(x_points, y_points, z_points):
                     'label': 'Play',
                     'method': 'animate',
                     'args': [None, {
-                        'frame': {'duration': 30, 'redraw': True},  # Faster animation
+                        'frame': {'duration': 30, 'redraw': True},
                         'fromcurrent': True,
                         'transition': {'duration': 0},
                         'mode': 'immediate'
@@ -357,33 +311,13 @@ def plot_trajectory_3d(x_points, y_points, z_points):
                     'method': 'animate'
                 } for k, f in enumerate(frames)
             ]
-        }]
+        }],
+        frames=frames,
+        title='3D Borgoball Trajectory with AI Defenders'
     )
 
-    # Update layout
-    fig.update_layout(
-        title='3D Borgoball Trajectory with Bounces',
-        scene=dict(
-            xaxis_title='Distance (feet)',
-            yaxis_title='Field Position (feet)',
-            zaxis_title='Height (feet)',
-            zaxis=dict(range=[0, 85]),
-            camera=dict(
-                eye=dict(x=-1.2, y=-1.2, z=0.2),
-                up=dict(x=0, y=0, z=1)
-            ),
-            aspectmode='manual',
-            aspectratio=dict(x=1, y=1, z=0.4)
-        ),
-        width=800,
-        height=600,
-        margin=dict(l=0, r=0, b=0, t=30)
-    )
+    return fig, defenders
 
-    # Add the frames to the figure
-    fig.frames = frames
-
-    return fig
 
 def calculate_distance(exit_velocity, launch_angle):
     """
@@ -493,8 +427,19 @@ if st.button("Calculate"):
             st.metric("Total Distance (with roll)", f"{total_distance:.1f} feet")
 
         # Generate and display 3D trajectory plot
-        fig_3d = plot_trajectory_3d(x_points, y_points, z_points)
-        st.plotly_chart(fig_3d, use_container_width=True)
+        fig_3d, defenders = plot_trajectory_3d(x_points, y_points, z_points)
+st.plotly_chart(fig_3d, use_container_width=True)
+
+# Check if a defender made the catch
+caught_by = None
+for d in defenders:
+    if d.get("caught"):
+        caught_by = d["name"]
+        break
+
+if caught_by:
+    st.success(f"🤯 {caught_by} made the catch!")
+
 
         # Add explanation of 3D view
         st.info("""
