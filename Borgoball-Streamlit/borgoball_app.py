@@ -1,5 +1,3 @@
-How does this code look?
-
 import streamlit as st
 import numpy as np
 from math import cos, sin, radians
