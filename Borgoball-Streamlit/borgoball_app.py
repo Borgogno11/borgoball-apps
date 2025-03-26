@@ -369,9 +369,10 @@ def plot_trajectory_3d(x_points, y_points, z_points):
             zaxis_title='Height (feet)',
             zaxis=dict(range=[0, 85]),
             camera=dict(
-                eye=dict(x=-2, y=0, z=-5),
-                up=dict(x=0, y=0, z=1)
-            ),
+    eye=dict(x=-30, y=-30, z=3),
+    up=dict(x=0, y=0, z=1)
+)
+
             aspectmode='manual',
             aspectratio=dict(x=1, y=1, z=0.4)
         ),
