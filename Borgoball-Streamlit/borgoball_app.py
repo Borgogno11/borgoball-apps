@@ -1,3 +1,5 @@
+How does this code look?
+
 import streamlit as st
 import numpy as np
 from math import cos, sin, radians
@@ -256,7 +258,7 @@ def plot_trajectory_3d(x_points, y_points, z_points):
             yaxis_title='Field Position (feet)',
             zaxis_title='Height (feet)',
             camera=dict(
-                eye=dict(x=-10, y=-10, z=0.5),
+                eye=dict(x=-8, y=-8, z=0.5),
                 up=dict(x=0, y=0, z=1)
             ),
             aspectmode='manual',
